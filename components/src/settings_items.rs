@@ -26,6 +26,7 @@ pub fn ThemeSelector(current_theme: String, on_change: EventHandler<String>) -> 
                 option { value: "default", "Default" }
                 option { value: "gruvbox", "Gruvbox Material" }
                 option { value: "gruvbox-classic", "Gruvbox Classic" }
+                option { value: "gruvbox-dark-soft", "Gruvbox Dark Soft" }
                 option { value: "dracula", "Dracula" }
                 option { value: "nord", "Nord" }
                 option { value: "catppuccin", "Catppuccin Mocha" }

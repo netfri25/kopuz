@@ -36,24 +36,31 @@ pub fn use_search_data(
                                 let parts: Vec<&str> = path_str.split(':').collect();
                                 if parts.len() >= 2 {
                                     let id = parts[1];
-                                    let mut url = format!("{}/Items/{}/Images/Primary", server.url, id);
+                                    let mut url =
+                                        format!("{}/Items/{}/Images/Primary", server.url, id);
                                     let mut query_params = Vec::new();
-                                    
+
                                     if parts.len() >= 3 {
                                         query_params.push(format!("tag={}", parts[2]));
                                     }
                                     if let Some(token) = &server.access_token {
                                         query_params.push(format!("api_key={}", token));
                                     }
-                                    
+
                                     if !query_params.is_empty() {
                                         url.push('?');
                                         url.push_str(&query_params.join("&"));
                                     }
                                     Some(url)
-                                } else { None }
-                            } else { None }
-                        } else { None };
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
                         genre_items.insert(g.to_string(), cover_url);
                     }
                 }
@@ -62,7 +69,6 @@ pub fn use_search_data(
             result.sort_by(|a, b| a.0.cmp(&b.0));
             return result;
         }
-
 
         let mut genre_covers: std::collections::HashMap<String, Vec<std::path::PathBuf>> =
             std::collections::HashMap::new();

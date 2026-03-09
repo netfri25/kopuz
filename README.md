@@ -1,4 +1,5 @@
 # Rusic
+
 Rusic is a modern, lightweight, music player application built with Rust and the Dioxus framework. It provides a clean and responsive interface for managing and enjoying your local music collection.
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/K6Bmzw2E4M)
@@ -18,6 +19,29 @@ Rusic allows you to scan your local directories for audio files, or you jellyfin
 - **Double Option**: Yes, you can also use your jellyfin server to listen to your music coming from your server!
 
 ## Installation
+
+### NixOS / Nix
+
+Run directly without installing:
+
+```bash
+nix run github:temidaradev/rusic/nix
+```
+
+Install to your profile:
+
+```bash
+nix profile install github:temidaradev/rusic/nix
+```
+
+Or add to your NixOS flake inputs:
+
+```nix
+# flake.nix
+{
+  inputs.rusic.url = "github:temidaradev/rusic/nix";
+}
+```
 
 ### Flatpak (Recommended)
 
@@ -43,11 +67,27 @@ dx serve --package rusic
 
 ### MacOS Quarantine
 
-Because Apple hates open-source software, they have made it harder for users to install them since they don't explicitly "trust" them. Though the source code can be verified by yours truly. However, in the meantime, after downloading the ``.dmg`` and dragging the app to your /Applications, use:
+Because Apple hates open-source software, they have made it harder for users to install them since they don't explicitly "trust" them. Though the source code can be verified by yours truly. However, in the meantime, after downloading the `.dmg` and dragging the app to your /Applications, use:
 
 ```bash
 xattr -d com.apple.quarantine /Applications/Rusic.app
 ```
+
+### Where does Rusic keep its files?
+
+On **macOS** everything lives under your Library folders:
+- `~/Library/Application Support/com.temidaradev.rusic/config.json` — your settings
+- `~/Library/Caches/com.temidaradev.rusic/library.json` — the scanned library
+- `~/Library/Caches/com.temidaradev.rusic/playlists.json` — your playlists
+- `~/Library/Caches/com.temidaradev.rusic/covers/` — cached album art
+
+On **Linux** it follows the XDG spec like you'd expect:
+- `~/.config/rusic/config.json` — your settings
+- `~/.cache/rusic/library.json` — the scanned library
+- `~/.cache/rusic/playlists.json` — your playlists
+- `~/.cache/rusic/covers/` — cached album art
+
+If covers aren't showing or the library looks off, just delete the cache folder and hit rescan.
 
 ### Scrobbling functionality
 
