@@ -79,7 +79,7 @@ pub fn DotsMenu(props: DotsMenuProps) -> Element {
 
                 // Dropdown panel
                 div {
-                    class: "absolute {dropdown_align} top-full mt-1 w-52 bg-neutral-900 border border-white/10 rounded-lg z-20 py-1 shadow-xl",
+                    class: "absolute {dropdown_align} top-full mt-1 w-auto bg-neutral-900 border border-white/10 rounded-lg z-20 py-1 shadow-xl",
                     onclick: move |evt| evt.stop_propagation(),
 
                     for (idx, action) in props.actions.iter().enumerate() {
@@ -95,7 +95,7 @@ pub fn DotsMenu(props: DotsMenuProps) -> Element {
                             rsx! {
                                 button {
                                     key: "{idx}",
-                                    class: "w-full text-left px-4 py-2 text-sm {text_color} hover:bg-white/10 flex items-center gap-2 transition-colors",
+                                    class: "w-full text-left px-4 py-2 text-sm {text_color} hover:bg-white/10 flex items-center gap-2 transition-colors whitespace-nowrap",
                                     onclick: move |_| {
                                         props.on_action.call(idx);
                                     },
