@@ -16,8 +16,6 @@
 , xdotool ? null
 , wayland ? null
 , dbus ? null
-# Darwin only
-, sigtool ? null
 , extraBuildInputs ? []
 }:
 
@@ -37,8 +35,6 @@ rustPlatform.buildRustPackage {
     dioxus-cli
   ] ++ lib.optionals stdenv.isLinux [
     wrapGAppsHook3
-  ] ++ lib.optionals stdenv.isDarwin [
-    sigtool
   ];
 
   buildInputs = lib.optionals stdenv.isLinux [
@@ -59,6 +55,16 @@ rustPlatform.buildRustPackage {
     runHook preBuild
 
     tailwindcss -i tailwind.css -o rusic/assets/tailwind.css --minify
+
+    ${lib.optionalString stdenv.isDarwin ''
+      mkdir -p "$TMPDIR/fake-bin"
+      cat > "$TMPDIR/fake-bin/codesign" << 'CODESIGN_EOF'
+#!/bin/sh
+exec true
+CODESIGN_EOF
+      chmod +x "$TMPDIR/fake-bin/codesign"
+      export PATH="$TMPDIR/fake-bin:$PATH"
+    ''}
 
     dx build --release --platform desktop -p rusic --offline --frozen
 
