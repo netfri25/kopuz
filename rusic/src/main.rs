@@ -175,8 +175,8 @@ fn App() -> Element {
 
     let is_playing = use_signal(|| false);
     let is_fullscreen = use_signal(|| false);
-    let mut is_rightbar_open = use_signal(|| false);
-    let mut rightbar_width = use_signal(|| 320usize);
+    let is_rightbar_open = use_signal(|| false);
+    let rightbar_width = use_signal(|| 320usize);
     let mut palette = use_signal(|| Option::<Vec<utils::color::Color>>::None);
 
     use_effect(move || {

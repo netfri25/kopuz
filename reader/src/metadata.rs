@@ -5,10 +5,10 @@ use lofty::tag::ItemKey;
 use lofty::{probe::Probe, properties::FileProperties, tag::Tag};
 use std::path::Path;
 
-pub fn make_album_id(artist: &str, album: &str) -> String {
+pub fn make_album_id(grouping_key: &str, album: &str) -> String {
     format!(
         "alb_{}",
-        format!("{artist}_{album}")
+        format!("{grouping_key}_{album}")
             .to_lowercase()
             .replace(' ', "_")
             .replace(|c: char| !c.is_alphanumeric() && c != '_', "")
@@ -32,6 +32,16 @@ pub fn extract_metadata(
         .and_then(|t| t.album().map(|a| a.to_string()))
         .unwrap_or_else(|| "Unknown Album".to_string());
 
+    let album_artist = tag
+        .and_then(|t| t.get_string(&ItemKey::AlbumArtist))
+        .map(|s| s.to_string());
+
+    let parent_path = track_path.parent().map(|p| p.to_string_lossy());
+    let grouping_key = album_artist
+        .as_deref()
+        .or(parent_path.as_deref())
+        .unwrap_or(&artist);
+
     let title = tag
         .and_then(|t| t.title().map(|t| t.to_string()))
         .or_else(|| {
@@ -47,7 +57,7 @@ pub fn extract_metadata(
 
     Track {
         path: track_path.to_path_buf(),
-        album_id: make_album_id(&artist, &album_title),
+        album_id: make_album_id(grouping_key, &album_title),
         title,
         artist,
         album: album_title,
@@ -86,10 +96,22 @@ pub fn read(track_path: &Path, cover_cache: &Path, library: &mut Library) -> Opt
             .unwrap_or_else(|| "Unknown".to_string());
         let year = tag.and_then(|t| t.year()).unwrap_or(0) as u16;
 
+        let album_artist = tag
+            .and_then(|t| t.get_string(&ItemKey::AlbumArtist))
+            .map(|s| s.to_string())
+            .or_else(|| tag.and_then(|t| t.artist().map(|a| a.to_string())))
+            .or_else(|| {
+                track_path
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .map(|s| s.to_string_lossy().into_owned())
+            })
+            .unwrap_or_else(|| "Unknown Artist".to_string());
+
         library.add_album(Album {
             id: album_id.clone(),
             title: track.album.clone(),
-            artist: track.artist.clone(),
+            artist: album_artist,
             genre,
             year,
             cover_path: cover,

@@ -1,7 +1,8 @@
 use config::{AppConfig, SortOrder};
 use dioxus::prelude::*;
-use reader::Library;
 use reader::models::Track;
+use reader::Library;
+use std::collections::HashMap;
 
 pub struct LibraryItems {
     pub all_tracks: Memo<Vec<(Track, Option<String>)>>,
@@ -19,10 +20,10 @@ pub fn use_library_items(library: Signal<Library>) -> LibraryItems {
         let lib = library.read();
         let mut artists = std::collections::HashSet::new();
         for album in &lib.albums {
-            artists.insert(album.artist.clone());
+            artists.insert(&album.artist);
         }
         for track in &lib.tracks {
-            artists.insert(track.artist.clone());
+            artists.insert(&track.artist);
         }
         artists.len()
     });
@@ -30,27 +31,32 @@ pub fn use_library_items(library: Signal<Library>) -> LibraryItems {
     let all_tracks = use_memo(move || {
         let lib = library.read();
 
+        let album_covers: HashMap<_, _> = lib
+            .albums
+            .iter()
+            .map(|a| {
+                (
+                    &a.id,
+                    a.cover_path
+                        .as_ref()
+                        .and_then(|p| utils::format_artwork_url(Some(p))),
+                )
+            })
+            .collect();
+
         let mut tracks: Vec<(Track, Option<String>)> = lib
             .tracks
             .iter()
             .map(|track| {
-                let album = lib.albums.iter().find(|a| a.id == track.album_id);
-                let cover_url = album
-                    .and_then(|a| a.cover_path.as_ref())
-                    .and_then(|p| utils::format_artwork_url(Some(p)));
+                let cover_url = album_covers.get(&track.album_id).cloned().flatten();
                 (track.clone(), cover_url)
             })
             .collect();
 
         match *sort_order.read() {
-            SortOrder::Title => {
-                tracks.sort_by(|(a, _), (b, _)| a.title.to_lowercase().cmp(&b.title.to_lowercase()))
-            }
-            SortOrder::Artist => tracks
-                .sort_by(|(a, _), (b, _)| a.artist.to_lowercase().cmp(&b.artist.to_lowercase())),
-            SortOrder::Album => {
-                tracks.sort_by(|(a, _), (b, _)| a.album.to_lowercase().cmp(&b.album.to_lowercase()))
-            }
+            SortOrder::Title => tracks.sort_by_cached_key(|(a, _)| a.title.to_lowercase()),
+            SortOrder::Artist => tracks.sort_by_cached_key(|(a, _)| a.artist.to_lowercase()),
+            SortOrder::Album => tracks.sort_by_cached_key(|(a, _)| a.album.to_lowercase()),
         }
 
         tracks

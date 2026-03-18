@@ -17,7 +17,6 @@ pub fn LocalArtist(
     let mut show_playlist_modal = use_signal(|| false);
     let mut active_menu_track = use_signal(|| None::<std::path::PathBuf>);
     let mut selected_track_for_playlist = use_signal(|| None::<std::path::PathBuf>);
-
     let local_artists = use_memo(move || {
         let lib = library.read();
         let mut artist_map = HashMap::new();
@@ -62,7 +61,7 @@ pub fn LocalArtist(
         div {
             if name.is_empty() {
                 div { class: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8",
-                    for (artist, cover_path) in local_artists() {
+                    for (artist , cover_path) in local_artists() {
                         {
                             let cover_url = utils::format_artwork_url(cover_path.as_ref());
                             let art = artist.clone();

@@ -134,7 +134,6 @@ pub fn use_search_data(
                                 .map(|a| a.genre.to_lowercase().contains(&query))
                                 .unwrap_or(false)
                     })
-                    .take(100)
                     .map(|t| {
                         let cover_url = album_map
                             .get(&t.album_id)
@@ -152,7 +151,6 @@ pub fn use_search_data(
                             || a.artist.to_lowercase().contains(&query)
                             || a.genre.to_lowercase().contains(&query)
                     })
-                    .take(50)
                     .map(|a| {
                         let cover_url = a
                             .cover_path
@@ -171,7 +169,6 @@ pub fn use_search_data(
                             || t.artist.to_lowercase().contains(&query)
                             || t.album.to_lowercase().contains(&query)
                     })
-                    .take(100)
                     .map(|t| {
                         let cover_url = if let Some(server) = &config.read().server {
                             let path_str = t.path.to_string_lossy();
