@@ -279,7 +279,7 @@ pub fn use_player_task(mut ctrl: PlayerController) {
                                     }
 
                                     if last_progress_report.elapsed().as_secs() >= 5
-                                        || is_playing != *ctrl.is_playing.peek()
+                                        || is_playing != *was_playing.peek()
                                     {
                                         let ticks = pos.as_micros() as u64 * 10;
                                         let remote = remote.clone();

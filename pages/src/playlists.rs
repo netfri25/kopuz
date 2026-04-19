@@ -69,6 +69,8 @@ pub fn PlaylistsPage(
                         }
                     }
                 });
+            } else {
+                error.set(Some("Server not configured or credentials missing".to_string()));
             }
         } else {
             let mut store = playlist_store.write();

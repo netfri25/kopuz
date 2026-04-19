@@ -730,8 +730,10 @@ impl Player {
     pub fn play_url(&mut self, url: String, _meta: NowPlayingMeta) {
         self.audio.set_src(&url);
         self.audio.set_volume(self.volume as f64);
-        let _ = self.audio.play();
-        self.has_source = true;
+        match self.audio.play() {
+            Ok(_) => self.has_source = true,
+            Err(_) => self.has_source = false,
+        }
     }
 
     pub fn pause(&mut self) {
