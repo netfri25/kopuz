@@ -1,3 +1,8 @@
+#[cfg(target_arch = "wasm32")]
+use crate::web_storage::{
+    load_web_config, load_web_favorites, load_web_library, load_web_playlists, load_web_ui_state,
+    save_web_config, save_web_favorites, save_web_library, save_web_playlists, save_web_ui_state,
+};
 use components::{
     bottombar::Bottombar, fullscreen::Fullscreen, rightbar::Rightbar, sidebar::Sidebar,
     titlebar::Titlebar,
@@ -9,17 +14,11 @@ use dioxus::desktop::tao::platform::macos::WindowBuilderExtMacOS;
 use dioxus::prelude::*;
 #[cfg(not(target_arch = "wasm32"))]
 use discord_presence::Presence;
+use kopuz_route::Route;
 use player::player::Player;
 use reader::FavoritesStore;
-use kopuz_route::Route;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
-#[cfg(target_arch = "wasm32")]
-use crate::web_storage::{
-    load_web_config, load_web_favorites, load_web_library, load_web_playlists, load_web_ui_state,
-    save_web_config, save_web_favorites, save_web_library, save_web_playlists,
-    save_web_ui_state,
-};
 
 mod web_storage;
 
@@ -767,8 +766,8 @@ fn App() -> Element {
                                 selected_playlist_id: selected_playlist_id,
                             }
                         },
-                        Route::Logs => rsx! {
-                          pages::logs::Logs {
+                        Route::Activity => rsx! {
+                          pages::activity::Activity {
                               library: library,
                               config: config,
                           }

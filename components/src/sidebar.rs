@@ -48,9 +48,9 @@ const TOP_MENU: &[SidebarItem] = &[
         icon: "fa-solid fa-heart",
     },
     SidebarItem {
-        key: "logs",
-        route: Route::Logs,
-        icon: "fa-solid fa-clipboard-list",
+        key: "Activity",
+        route: Route::Activity,
+        icon: "fa-solid fa-chart-simple",
     },
 ];
 

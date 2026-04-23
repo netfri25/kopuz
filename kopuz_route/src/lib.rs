@@ -7,7 +7,7 @@ pub enum Route {
     Artist,
     Playlists,
     Favorites,
-    Logs,
+    Activity,
     Settings,
     ThemeEditor,
 }
