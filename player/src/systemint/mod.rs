@@ -11,7 +11,7 @@ pub use macos::{
 mod linux;
 
 #[cfg(target_os = "linux")]
-pub use linux::{SystemEvent, poll_event, update_now_playing};
+pub use linux::{SystemEvent, poll_event, update_now_playing, update_position};
 
 #[cfg(target_os = "windows")]
 mod windows;

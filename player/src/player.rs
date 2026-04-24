@@ -178,6 +178,27 @@ impl Player {
             )
             .expect("failed to build output stream");
 
+        #[cfg(target_os = "linux")]
+        {
+            let pos = position_micros.clone();
+            let state = state.clone();
+            std::thread::spawn(move || {
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(250));
+                    let st = state.lock().unwrap();
+                    if st.finished {
+                        break;
+                    }
+                    let paused = st.paused;
+                    drop(st);
+                    if !paused {
+                        let micros = pos.load(std::sync::atomic::Ordering::Relaxed);
+                        systemint::update_position(micros as f64 / 1_000_000.0);
+                    }
+                }
+            });
+        }
+
         stream.play().expect("failed to start output stream");
         self._stream = Some(stream);
 

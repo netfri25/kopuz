@@ -17,8 +17,8 @@ pub enum SystemEvent {
 
 static TX: OnceLock<Sender<SystemEvent>> = OnceLock::new();
 static RX: OnceLock<Mutex<Receiver<SystemEvent>>> = OnceLock::new();
-static STATE: OnceLock<Arc<Mutex<(Metadata, PlaybackStatus)>>> = OnceLock::new();
-static NOTIFY: OnceLock<tokio::sync::mpsc::UnboundedSender<()>> = OnceLock::new();
+static STATE: OnceLock<Arc<Mutex<(Metadata, PlaybackStatus, Time)>>> = OnceLock::new();
+static NOTIFY: OnceLock<tokio::sync::mpsc::UnboundedSender<bool>> = OnceLock::new();
 
 fn tx() -> Sender<SystemEvent> {
     TX.get_or_init(|| {
@@ -29,13 +29,22 @@ fn tx() -> Sender<SystemEvent> {
     .clone()
 }
 
-fn state() -> Arc<Mutex<(Metadata, PlaybackStatus)>> {
+fn state() -> Arc<Mutex<(Metadata, PlaybackStatus, Time)>> {
     STATE
-        .get_or_init(|| Arc::new(Mutex::new((Metadata::new(), PlaybackStatus::Stopped))))
+        .get_or_init(|| {
+            Arc::new(Mutex::new((
+                Metadata::new(),
+                PlaybackStatus::Stopped,
+                Time::ZERO,
+            )))
+        })
         .clone()
 }
 
-struct P(Arc<Mutex<(Metadata, PlaybackStatus)>>, Sender<SystemEvent>);
+struct P(
+    Arc<Mutex<(Metadata, PlaybackStatus, Time)>>,
+    Sender<SystemEvent>,
+);
 
 impl RootInterface for P {
     async fn raise(&self) -> fdo::Result<()> {
@@ -145,7 +154,7 @@ impl PlayerInterface for P {
         Ok(())
     }
     async fn position(&self) -> fdo::Result<Time> {
-        Ok(Time::ZERO)
+        Ok(self.0.lock().map(|s| s.2).unwrap_or(Time::ZERO))
     }
     async fn minimum_rate(&self) -> fdo::Result<f64> {
         Ok(1.0)
@@ -166,11 +175,19 @@ impl PlayerInterface for P {
         Ok(true)
     }
     async fn can_seek(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
     async fn can_control(&self) -> fdo::Result<bool> {
         Ok(true)
     }
+}
+
+pub fn update_position(position: f64) {
+    setup();
+    if let Ok(mut s) = state().lock() {
+        s.2 = Time::from_micros((position * 1e6) as i64);
+    }
+    NOTIFY.get().map(|tx| tx.send(false));
 }
 
 fn setup() {
@@ -186,7 +203,7 @@ fn setup() {
                 .unwrap()
                 .block_on(async {
                     if let Ok(srv) = Server::new("kopuz", P(st.clone(), tx())).await {
-                        while nrx.recv().await.is_some() {
+                        while let Some(seeked) = nrx.recv().await {
                             if let Ok(s) = st.lock() {
                                 srv.properties_changed([
                                     Property::Metadata(s.0.clone()),
@@ -194,6 +211,11 @@ fn setup() {
                                 ])
                                 .await
                                 .ok();
+                                if seeked {
+                                    srv.emit(mpris_server::Signal::Seeked { position: s.2 })
+                                        .await
+                                        .ok();
+                                }
                             }
                         }
                     }
@@ -212,7 +234,7 @@ pub fn update_now_playing(
     artist: &str,
     album: &str,
     duration: f64,
-    _position: f64,
+    position: f64,
     playing: bool,
     artwork_path: Option<&str>,
 ) {
@@ -240,7 +262,8 @@ pub fn update_now_playing(
             } else {
                 PlaybackStatus::Paused
             },
+            Time::from_micros((position * 1e6) as i64),
         );
     }
-    NOTIFY.get().map(|tx| tx.send(()));
+    NOTIFY.get().map(|tx| tx.send(true));
 }
