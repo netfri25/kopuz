@@ -1,4 +1,5 @@
 use config::AppConfig;
+use config::BackBehavior;
 use config::MusicService;
 use dioxus::{logger::tracing, prelude::*};
 use player::player::{NowPlayingMeta, Player};
@@ -578,6 +579,17 @@ impl PlayerController {
     }
 
     pub fn play_prev(&mut self) {
+        let progress = *self.current_song_progress.peek();
+        let back_behavior = self.config.peek().back_behavior;
+
+        if back_behavior == BackBehavior::RewindThenPrev && progress > 3 {
+            self.player
+                .write()
+                .seek(std::time::Duration::ZERO);
+            self.current_song_progress.set(0);
+            return;
+        }
+
         let idx = *self.current_queue_index.peek();
         let queue_len = self.queue.peek().len();
 

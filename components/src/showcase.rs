@@ -26,6 +26,12 @@ pub struct ShowcaseProps {
     pub selected_tracks: HashSet<PathBuf>,
     pub on_select: Option<EventHandler<(usize, bool)>>,
     pub on_long_press: Option<EventHandler<usize>>,
+    #[props(default = false)]
+    pub is_reorderable: bool,
+    #[props(default)]
+    pub on_move_up: EventHandler<usize>,
+    #[props(default)]
+    pub on_move_down: EventHandler<usize>,
 }
 
 #[component]
@@ -129,51 +135,73 @@ pub fn Showcase(props: ShowcaseProps) -> Element {
                              };
 
                              let is_selected = props.selected_tracks.contains(&track.path);
+                             let track_count = props.tracks.len();
+                             let can_move_up = props.is_reorderable && idx > 0;
+                             let can_move_down = props.is_reorderable && idx + 1 < track_count;
 
                              rsx! {
-                                 TrackRow {
+                                 div {
                                      key: "{track.path.display()}",
-                                     track: track.clone(),
-                                     cover_url: cover_url,
-                                     is_menu_open: props.active_track.as_ref() == Some(&track.path),
-                                     is_selection_mode: props.is_selection_mode,
-                                     is_selected: is_selected,
-                                     on_select: move |selected| {
-                                        if let Some(handler) = &props.on_select {
-                                            handler.call((idx, selected));
-                                        }
-                                     },
-                                     on_long_press: move |_| {
-                                        if let Some(handler) = &props.on_long_press {
-                                            handler.call(idx);
-                                        }
-                                     },
-                                     on_click_menu: move |_| {
-                                        if let Some(handler) = &props.on_click_menu {
-                                            handler.call(idx);
-                                        }
-                                     },
-                                     on_add_to_playlist: move |_| {
-                                        if let Some(handler) = &props.on_add_to_playlist {
-                                            handler.call(idx);
-                                        }
-                                     },
-                                     on_close_menu: move |_| {
-                                        if let Some(handler) = &props.on_close_menu {
-                                            handler.call(());
-                                        }
-                                     },
-                                     on_delete: move |_| {
-                                        if let Some(handler) = &props.on_delete_track {
-                                            handler.call(idx);
-                                        }
-                                     },
-                                     on_remove_from_playlist: move |_| {
-                                         if let Some(handler) = &props.on_remove_from_playlist {
-                                             handler.call(idx);
+                                     class: "flex items-center group",
+                                     div { class: "flex-1 min-w-0",
+                                         TrackRow {
+                                             track: track.clone(),
+                                             cover_url: cover_url,
+                                             is_menu_open: props.active_track.as_ref() == Some(&track.path),
+                                             is_selection_mode: props.is_selection_mode,
+                                             is_selected: is_selected,
+                                             on_select: move |selected| {
+                                                if let Some(handler) = &props.on_select {
+                                                    handler.call((idx, selected));
+                                                }
+                                             },
+                                             on_long_press: move |_| {
+                                                if let Some(handler) = &props.on_long_press {
+                                                    handler.call(idx);
+                                                }
+                                             },
+                                             on_click_menu: move |_| {
+                                                if let Some(handler) = &props.on_click_menu {
+                                                    handler.call(idx);
+                                                }
+                                             },
+                                             on_add_to_playlist: move |_| {
+                                                if let Some(handler) = &props.on_add_to_playlist {
+                                                    handler.call(idx);
+                                                }
+                                             },
+                                             on_close_menu: move |_| {
+                                                if let Some(handler) = &props.on_close_menu {
+                                                    handler.call(());
+                                                }
+                                             },
+                                             on_delete: move |_| {
+                                                if let Some(handler) = &props.on_delete_track {
+                                                    handler.call(idx);
+                                                }
+                                             },
+                                             on_remove_from_playlist: move |_| {
+                                                 if let Some(handler) = &props.on_remove_from_playlist {
+                                                     handler.call(idx);
+                                                 }
+                                             },
+                                             on_play: move |_| props.on_play.call(idx)
                                          }
-                                     },
-                                     on_play: move |_| props.on_play.call(idx)
+                                     }
+                                     if props.is_reorderable && !props.is_selection_mode {
+                                         div { class: "flex flex-col pr-2 shrink-0",
+                                             button {
+                                                 class: if can_move_up { "p-0.5 text-slate-500 hover:text-white transition-colors" } else { "p-0.5 text-slate-700 cursor-default" },
+                                                 onclick: move |evt| { evt.stop_propagation(); if can_move_up { props.on_move_up.call(idx); } },
+                                                 i { class: "fa-solid fa-chevron-up text-[9px]" }
+                                             }
+                                             button {
+                                                 class: if can_move_down { "p-0.5 text-slate-500 hover:text-white transition-colors" } else { "p-0.5 text-slate-700 cursor-default" },
+                                                 onclick: move |evt| { evt.stop_propagation(); if can_move_down { props.on_move_down.call(idx); } },
+                                                 i { class: "fa-solid fa-chevron-down text-[9px]" }
+                                             }
+                                         }
+                                     }
                                  }
                              }
                          }

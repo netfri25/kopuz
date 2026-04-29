@@ -115,11 +115,20 @@ pub struct JellyfinPlaylist {
     pub tracks: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PlaylistFolder {
+    pub id: String,
+    pub name: String,
+    pub playlist_ids: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct PlaylistStore {
     pub playlists: Vec<Playlist>,
     #[serde(default)]
     pub jellyfin_playlists: Vec<JellyfinPlaylist>,
+    #[serde(default)]
+    pub folders: Vec<PlaylistFolder>,
 }
 
 impl PlaylistStore {

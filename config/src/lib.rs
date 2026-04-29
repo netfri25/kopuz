@@ -49,6 +49,13 @@ pub enum SortOrder {
     Album,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum BackBehavior {
+    #[default]
+    RewindThenPrev,
+    AlwaysPrev,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
@@ -84,6 +91,8 @@ pub struct AppConfig {
     pub volume: f32,
     #[serde(default)]
     pub custom_themes: HashMap<String, CustomTheme>,
+    #[serde(default)]
+    pub back_behavior: BackBehavior,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -179,6 +188,7 @@ impl Default for AppConfig {
             sidebar_order: default_sidebar_order(),
             volume: default_volume(),
             custom_themes: HashMap::new(),
+            back_behavior: BackBehavior::RewindThenPrev,
         }
     }
 }

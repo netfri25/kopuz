@@ -234,8 +234,9 @@ pub fn PlaylistDetail(
         }
     };
 
-    let pid_for_delete = playlist_id.clone();
     let pid_for_remove = playlist_id.clone();
+    let pid_for_move_up = playlist_id.clone();
+    let pid_for_move_down = playlist_id.clone();
 
     rsx! {
         div {
@@ -276,19 +277,6 @@ pub fn PlaylistDetail(
                         }
                     }
                 },
-                actions: rsx! {
-                    if !is_jellyfin {
-                        button {
-                             class: "px-4 py-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-medium flex items-center gap-2",
-                             onclick: move |_| {
-                                 on_close.call(());
-                                 playlist_store.write().playlists.retain(|p| p.id != pid_for_delete);
-                             },
-                             i { class: "fa-solid fa-trash" }
-                             "{i18n::t(\"delete_playlist\")}"
-                        }
-                    }
-                },
                 on_play: {
                     let mut ctrl = use_context::<hooks::use_player_controller::PlayerController>();
                     move |idx: usize| {
@@ -318,6 +306,86 @@ pub fn PlaylistDetail(
                     }
                 },
                 on_close_menu: move |_| active_menu_track.set(None),
+                is_reorderable: true,
+                on_move_up: move |idx: usize| {
+                    if idx == 0 { return; }
+                    tracks.write().swap(idx - 1, idx);
+                    if !is_jellyfin {
+                        let mut store = playlist_store.write();
+                        if let Some(pl) = store.playlists.iter_mut().find(|p| p.id == pid_for_move_up) {
+                            pl.tracks.swap(idx - 1, idx);
+                        }
+                    } else {
+                        let track_list = tracks.read().clone();
+                        let pid = pid_for_move_up.clone();
+                        spawn(async move {
+                            let conf = config.peek();
+                            if let Some(server) = &conf.server {
+                                if let (Some(token), Some(user_id)) = (&server.access_token, &server.user_id) {
+                                    let moved_item = track_list.get(idx - 1).and_then(|t| t.playlist_item_id.clone());
+                                    match server.service {
+                                        MusicService::Jellyfin => {
+                                            if let Some(item_id) = moved_item {
+                                                let remote = server::jellyfin::JellyfinClient::new(&server.url, Some(token), &conf.device_id, Some(user_id));
+                                                let _ = remote.move_playlist_item(&pid, &item_id, idx - 1).await;
+                                            }
+                                        }
+                                        MusicService::Subsonic | MusicService::Custom => {
+                                            let remote = server::subsonic::SubsonicClient::new(&server.url, user_id, token);
+                                            let ids: Vec<String> = track_list.iter().filter_map(|t| {
+                                                let s = t.path.to_string_lossy();
+                                                let parts: Vec<&str> = s.split(':').collect();
+                                                if parts.len() >= 2 { Some(parts[1].to_string()) } else { None }
+                                            }).collect();
+                                            let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+                                            let _ = remote.reorder_playlist(&pid, &id_refs, id_refs.len()).await;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                on_move_down: move |idx: usize| {
+                    let len = tracks.read().len();
+                    if idx + 1 >= len { return; }
+                    tracks.write().swap(idx, idx + 1);
+                    if !is_jellyfin {
+                        let mut store = playlist_store.write();
+                        if let Some(pl) = store.playlists.iter_mut().find(|p| p.id == pid_for_move_down) {
+                            pl.tracks.swap(idx, idx + 1);
+                        }
+                    } else {
+                        let track_list = tracks.read().clone();
+                        let pid = pid_for_move_down.clone();
+                        spawn(async move {
+                            let conf = config.peek();
+                            if let Some(server) = &conf.server {
+                                if let (Some(token), Some(user_id)) = (&server.access_token, &server.user_id) {
+                                    let moved_item = track_list.get(idx + 1).and_then(|t| t.playlist_item_id.clone());
+                                    match server.service {
+                                        MusicService::Jellyfin => {
+                                            if let Some(item_id) = moved_item {
+                                                let remote = server::jellyfin::JellyfinClient::new(&server.url, Some(token), &conf.device_id, Some(user_id));
+                                                let _ = remote.move_playlist_item(&pid, &item_id, idx + 1).await;
+                                            }
+                                        }
+                                        MusicService::Subsonic | MusicService::Custom => {
+                                            let remote = server::subsonic::SubsonicClient::new(&server.url, user_id, token);
+                                            let ids: Vec<String> = track_list.iter().filter_map(|t| {
+                                                let s = t.path.to_string_lossy();
+                                                let parts: Vec<&str> = s.split(':').collect();
+                                                if parts.len() >= 2 { Some(parts[1].to_string()) } else { None }
+                                            }).collect();
+                                            let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+                                            let _ = remote.reorder_playlist(&pid, &id_refs, id_refs.len()).await;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
                 on_delete_track: {
                     move |idx: usize| {
                         if let Some(t) = tracks.read().get(idx) {

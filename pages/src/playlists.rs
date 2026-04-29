@@ -1,3 +1,4 @@
+use components::folder_detail::FolderDetail;
 use components::playlist_detail::PlaylistDetail;
 use components::playlist_popups::AddPlaylistPopup;
 use config::{AppConfig, MusicService, MusicSource};
@@ -29,6 +30,7 @@ pub fn PlaylistsPage(
 ) -> Element {
     let is_server = config.read().active_source == MusicSource::Server;
 
+    let mut selected_folder = use_signal(|| Option::<String>::None);
     let mut show_add_playlist = use_signal(|| false);
     let mut playlist_name = use_signal(|| String::new());
     let mut error = use_signal(|| Option::<String>::None);
@@ -98,7 +100,16 @@ pub fn PlaylistsPage(
         div {
             class: "p-8",
 
-            if let Some(pid) = selected_playlist_id.read().clone() {
+            if let Some(folder_path) = selected_folder.read().clone() {
+                FolderDetail {
+                    folder_path,
+                    library,
+                    playlist_store,
+                    config,
+                    queue,
+                    on_close: move |_| selected_folder.set(None),
+                }
+            } else if let Some(pid) = selected_playlist_id.read().clone() {
                 PlaylistDetail {
                     playlist_id: pid,
                     playlist_store,
@@ -119,12 +130,29 @@ pub fn PlaylistsPage(
             } else {
                 div { class: "flex items-center justify-between mb-8",
                     h1 { class: "text-3xl font-bold text-white", "{i18n::t(\"playlists\")}" }
-                    button {
-                        class: "text-white/60 flex items-center hover:text-white transition-colors p-3 rounded-full hover:bg-white/10",
-                        title: i18n::t("add_playlist").to_string(),
-                        aria_label: i18n::t("add_playlist").to_string(),
-                        onclick: move |_| { error.set(None); show_add_playlist.set(true); },
-                        i { class: "fa-solid fa-add" }
+                    div { class: "flex items-center gap-1",
+                        if !is_server {
+                            button {
+                                class: "text-white/60 flex items-center hover:text-white transition-colors p-3 rounded-full hover:bg-white/10",
+                                title: i18n::t("new_folder").to_string(),
+                                onclick: move |_| {
+                                    let new_id = uuid::Uuid::new_v4().to_string();
+                                    playlist_store.write().folders.push(reader::PlaylistFolder {
+                                        id: new_id,
+                                        name: i18n::t("new_folder").to_string(),
+                                        playlist_ids: vec![],
+                                    });
+                                },
+                                i { class: "fa-solid fa-folder-plus" }
+                            }
+                        }
+                        button {
+                            class: "text-white/60 flex items-center hover:text-white transition-colors p-3 rounded-full hover:bg-white/10",
+                            title: i18n::t("add_playlist").to_string(),
+                            aria_label: i18n::t("add_playlist").to_string(),
+                            onclick: move |_| { error.set(None); show_add_playlist.set(true); },
+                            i { class: "fa-solid fa-add" }
+                        }
                     }
                 }
                 if show_add_playlist() {
@@ -150,6 +178,7 @@ pub fn PlaylistsPage(
                         library,
                         config,
                         selected_playlist_id,
+                        on_select_folder: move |path| selected_folder.set(Some(path)),
                     }
                 }
             }

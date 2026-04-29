@@ -55,6 +55,12 @@ pub fn Artist(
                 }
             } else {
                 div { class: "w-full max-w-[1600px] mx-auto",
+                    button {
+                        class: "flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 group",
+                        onclick: move |_| artist_name.set(String::new()),
+                        i { class: "fa-solid fa-chevron-left text-sm group-hover:-translate-x-0.5 transition-transform" }
+                        span { class: "text-sm font-medium", "{i18n::t(\"back_to_artists\")}" }
+                    }
                     if is_server {
                         ServerArtist {
                             library,

@@ -1,8 +1,8 @@
 use ::server::provider::ProviderClient;
 use crate::theme_editor::ThemeEditorPage;
 use components::settings_items::{
-    DirectoryPicker, DiscordPresenceSettings, LanguageSelector, MusicBrainzSettings,
-    ServerSettings, SettingItem, ThemeSelector, ToggleSetting,
+    BackBehaviorSelector, DirectoryPicker, DiscordPresenceSettings, LanguageSelector,
+    MusicBrainzSettings, ServerSettings, SettingItem, ThemeSelector, ToggleSetting,
 };
 use components::settings_popups::{AddServerPopup, LoginPopup};
 use config::{AppConfig, MusicService};
@@ -184,6 +184,15 @@ pub fn Settings(config: Signal<AppConfig>) -> Element {
                                         enabled: config.read().show_source_toggle,
                                         on_change: move |val| config.write().show_source_toggle = val,
                                     }
+                                }
+                            }
+                        }
+                        SettingItem {
+                            title: i18n::t("back_behavior").to_string(),
+                            control: rsx! {
+                                BackBehaviorSelector {
+                                    current: config.read().back_behavior,
+                                    on_change: move |val| config.write().back_behavior = val,
                                 }
                             }
                         }

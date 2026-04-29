@@ -265,6 +265,26 @@ impl SubsonicClient {
         .map(|_| ())
     }
 
+    pub async fn reorder_playlist(
+        &self,
+        playlist_id: &str,
+        ordered_song_ids: &[&str],
+        total_tracks: usize,
+    ) -> Result<(), String> {
+        let mut params: Vec<(String, String)> = vec![
+            ("playlistId".to_string(), playlist_id.to_string()),
+        ];
+        for i in 0..total_tracks {
+            params.push(("songIndexToRemove".to_string(), i.to_string()));
+        }
+        for id in ordered_song_ids {
+            params.push(("songIdToAdd".to_string(), (*id).to_string()));
+        }
+        self.call::<EmptyData>("updatePlaylist.view", params)
+            .await
+            .map(|_| ())
+    }
+
     pub async fn get_starred_song_ids(&self) -> Result<Vec<String>, String> {
         let data = self
             .call::<GetStarred2Data>("getStarred2.view", vec![])

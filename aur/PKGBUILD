@@ -1,6 +1,6 @@
 # Maintainer: temidaradev <temidaradev@proton.me>
 pkgname=kopuz
-pkgver=0.4.2
+pkgver=0.4.3
 pkgrel=1
 pkgdesc="A modern music player"
 arch=('x86_64')
@@ -15,6 +15,7 @@ depends=(
     'openssl'
     'xdotool'
     'dbus'
+    'cmake'
 )
 makedepends=(
     'rust'

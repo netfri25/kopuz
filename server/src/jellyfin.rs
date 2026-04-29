@@ -500,6 +500,43 @@ impl JellyfinClient {
         Ok(())
     }
 
+    pub async fn move_playlist_item(
+        &self,
+        playlist_id: &str,
+        item_id: &str,
+        new_index: usize,
+    ) -> Result<(), String> {
+        let token = self
+            .access_token
+            .as_ref()
+            .ok_or("No access token available")?;
+
+        let url = format!(
+            "{}/Playlists/{}/Items/{}/Move/{}",
+            self.base_url, playlist_id, item_id, new_index
+        );
+
+        let auth_header = format!(
+            "MediaBrowser Client=\"Kopuz\", Device=\"Kopuz\", DeviceId=\"{}\", Version=\"{}\", Token=\"{}\"",
+            self.device_id, APP_VERSION, token
+        );
+
+        let resp = self
+            .http_client
+            .post(&url)
+            .header("X-Emby-Authorization", auth_header)
+            .header("Content-Length", "0")
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if !resp.status().is_success() {
+            return Err(format!("Failed to move playlist item: {}", resp.status()));
+        }
+
+        Ok(())
+    }
+
     pub async fn get_genres(&self) -> Result<Vec<Genre>, String> {
         let user_id = self.user_id()?;
         let query = [
