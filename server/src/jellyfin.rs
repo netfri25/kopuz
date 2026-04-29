@@ -569,7 +569,7 @@ impl JellyfinClient {
                 "ImageTags,Genres,ProductionYear,AlbumArtist,ChildCount",
             ),
             ("SortBy", "SortName"),
-            ("LibrarySortOrder", "Ascending"),
+            ("SortOrder", "Ascending"),
             ("StartIndex", start.as_str()),
             ("Limit", limit_val.as_str()),
         ];

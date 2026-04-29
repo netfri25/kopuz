@@ -43,7 +43,7 @@ impl MusicService {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum LibrarySortOrder {
+pub enum SortOrder {
     Title,
     Artist,
     Album,
@@ -77,8 +77,8 @@ pub struct AppConfig {
     pub device_id: String,
     #[serde(default = "default_discord_presence")]
     pub discord_presence: Option<bool>,
-    #[serde(default = "default_library_sort_order")]
-    pub library_sort_order: LibrarySortOrder,
+    #[serde(default = "default_sort_order")]
+    pub sort_order: SortOrder,
     #[serde(default = "default_artist_view_order")]
     pub artist_view_order: ArtistViewOrder,
     #[serde(default)]
@@ -144,8 +144,8 @@ fn default_discord_presence() -> Option<bool> {
     Some(true)
 }
 
-fn default_library_sort_order() -> LibrarySortOrder {
-    LibrarySortOrder::Title
+fn default_sort_order() -> SortOrder {
+    SortOrder::Title
 }
 
 fn default_artist_view_order() -> ArtistViewOrder {
@@ -190,7 +190,7 @@ impl Default for AppConfig {
             theme: default_theme(),
             device_id: default_device_id(),
             discord_presence: Some(true),
-            library_sort_order: default_library_sort_order(),
+            sort_order: default_sort_order(),
             artist_view_order: default_artist_view_order(),
             listen_counts: HashMap::new(),
             musicbrainz_token: String::new(),

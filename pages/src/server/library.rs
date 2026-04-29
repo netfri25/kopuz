@@ -23,12 +23,12 @@ pub fn JellyfinLibrary(
     let mut is_loading = use_signal(|| false);
     let mut has_fetched = use_signal(|| false);
     let mut fetch_generation = use_signal(|| 0usize);
-    let mut sort_order = use_signal(|| config.peek().library_sort_order.clone());
+    let mut sort_order = use_signal(|| config.peek().sort_order.clone());
     let mut scroll_stat = use_signal(|| 0.0);
     use_effect(move || {
         let curr = sort_order.read().clone();
-        if config.peek().library_sort_order != curr {
-            config.write().library_sort_order = curr;
+        if config.peek().sort_order != curr {
+            config.write().sort_order = curr;
         }
     });
 
@@ -74,7 +74,7 @@ pub fn JellyfinLibrary(
     let displayed_tracks = use_memo(move || {
         let mut tracks = library.read().jellyfin_tracks.clone();
         match *sort_order.read() {
-            config::LibrarySortOrder::Title => tracks.sort_by_cached_key(|a| {
+            config::SortOrder::Title => tracks.sort_by_cached_key(|a| {
                 (
                     a.title.to_lowercase(),
                     a.artist.to_lowercase(),
@@ -83,7 +83,7 @@ pub fn JellyfinLibrary(
                     a.track_number,
                 )
             }),
-            config::LibrarySortOrder::Artist => tracks.sort_by_cached_key(|a| {
+            config::SortOrder::Artist => tracks.sort_by_cached_key(|a| {
                 (
                     a.artist.to_lowercase(),
                     a.album.to_lowercase(),
@@ -92,7 +92,7 @@ pub fn JellyfinLibrary(
                     a.title.to_lowercase(),
                 )
             }),
-            config::LibrarySortOrder::Album => tracks.sort_by_cached_key(|a| {
+            config::SortOrder::Album => tracks.sort_by_cached_key(|a| {
                 (
                     a.album.to_lowercase(),
                     a.disc_number,
@@ -428,30 +428,30 @@ pub fn JellyfinLibrary(
                 div {
                     class: "flex space-x-1 bg-white/5 border border-white/5 p-1 rounded-lg",
                     button {
-                        class: if *sort_order.read() == config::LibrarySortOrder::Title {
+                        class: if *sort_order.read() == config::SortOrder::Title {
                             "px-3 py-1 text-xs rounded-md bg-white/10 text-white font-medium transition-all"
                         } else {
                             "px-3 py-1 text-xs rounded-md text-white/40 hover:text-white/80 transition-all"
                         },
-                        onclick: move |_| sort_order.set(config::LibrarySortOrder::Title),
+                        onclick: move |_| sort_order.set(config::SortOrder::Title),
                         "Title"
                     }
                     button {
-                        class: if *sort_order.read() == config::LibrarySortOrder::Artist {
+                        class: if *sort_order.read() == config::SortOrder::Artist {
                             "px-3 py-1 text-xs rounded-md bg-white/10 text-white font-medium transition-all"
                         } else {
                             "px-3 py-1 text-xs rounded-md text-white/40 hover:text-white/80 transition-all"
                         },
-                        onclick: move |_| sort_order.set(config::LibrarySortOrder::Artist),
+                        onclick: move |_| sort_order.set(config::SortOrder::Artist),
                         "Artist"
                     }
                     button {
-                        class: if *sort_order.read() == config::LibrarySortOrder::Album {
+                        class: if *sort_order.read() == config::SortOrder::Album {
                             "px-3 py-1 text-xs rounded-md bg-white/10 text-white font-medium transition-all"
                         } else {
                             "px-3 py-1 text-xs rounded-md text-white/40 hover:text-white/80 transition-all"
                         },
-                        onclick: move |_| sort_order.set(config::LibrarySortOrder::Album),
+                        onclick: move |_| sort_order.set(config::SortOrder::Album),
                         "Album"
                     }
                 }
