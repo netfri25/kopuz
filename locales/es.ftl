@@ -2,7 +2,7 @@ language-name = Español
 is_rtl = false
 
 settings = Ajustes
-theme_editor = Editar tema 
+theme_editor = Editar tema
 appearance = Apariencia
 language = Idioma
 library = Biblioteca
@@ -23,7 +23,7 @@ reconnect = Reconectar
 remove = Eliminar
 add = Agregar
 add_server = Agregar servidor
-server_details = Detalles del servidor 
+server_details = Detalles del servidor
 server_name = Nombre del servidor
 server_url = URL del servidor
 choose_service = Elegir Servicio
