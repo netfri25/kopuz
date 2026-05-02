@@ -9,6 +9,15 @@ pub struct NowPlayingMeta {
     pub artwork: Option<String>,
 }
 
+fn db_to_linear(db: f32) -> f32 {
+    10.0_f32.powf(db / 20.0)
+}
+
+#[cfg(target_arch = "wasm32")]
+const WEB_EQ_BAND_FREQUENCIES: [f32; 5] = [60.0, 250.0, 1_000.0, 4_000.0, 12_000.0];
+#[cfg(target_arch = "wasm32")]
+const WEB_EQ_BAND_Q: [f32; 5] = [0.9, 1.0, 1.0, 0.9, 0.8];
+
 #[cfg(not(target_arch = "wasm32"))]
 use crate::eq::Equalizer;
 #[cfg(not(target_arch = "wasm32"))]
@@ -22,6 +31,8 @@ use rb::{RB, RbConsumer, RbInspector, RbProducer, SpscRb};
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::{Arc, Mutex};
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
 
 #[cfg(not(target_arch = "wasm32"))]
 use symphonia::core::audio::{AudioBufferRef, Signal};
@@ -796,6 +807,10 @@ impl Default for Player {
 #[cfg(target_arch = "wasm32")]
 pub struct Player {
     audio: web_sys::HtmlAudioElement,
+    audio_context: web_sys::AudioContext,
+    _source_node: web_sys::MediaElementAudioSourceNode,
+    preamp_node: web_sys::GainNode,
+    eq_filters: [web_sys::BiquadFilterNode; 5],
     volume: f32,
     /// True once play_url has been called and not yet stopped
     has_source: bool,
@@ -806,11 +821,55 @@ impl Player {
     pub fn new() -> Self {
         let audio = web_sys::HtmlAudioElement::new().expect("HtmlAudioElement creation failed");
         audio.set_preload("auto");
-        Self {
+
+        let audio_context = web_sys::AudioContext::new().expect("AudioContext creation failed");
+        let preamp_node = audio_context
+            .create_gain()
+            .expect("GainNode creation failed");
+        let eq_filters = std::array::from_fn(|index| {
+            let filter = audio_context
+                .create_biquad_filter()
+                .expect("BiquadFilterNode creation failed");
+            filter.set_type(web_sys::BiquadFilterType::Peaking);
+            filter
+                .frequency()
+                .set_value(WEB_EQ_BAND_FREQUENCIES[index]);
+            filter.q().set_value(WEB_EQ_BAND_Q[index]);
+            filter.gain().set_value(0.0);
+            filter
+        });
+
+        let media_element: web_sys::HtmlMediaElement = audio.clone().unchecked_into();
+        let source_node = audio_context
+            .create_media_element_source(&media_element)
+            .expect("MediaElementAudioSourceNode creation failed");
+
+        source_node
+            .connect_with_audio_node(&preamp_node)
+            .expect("source -> preamp connection failed");
+
+        let mut previous: web_sys::AudioNode = preamp_node.clone().unchecked_into();
+        for filter in &eq_filters {
+            previous
+                .connect_with_audio_node(filter.as_ref())
+                .expect("filter connection failed");
+            previous = filter.clone().unchecked_into();
+        }
+        previous
+            .connect_with_audio_node(&audio_context.destination())
+            .expect("destination connection failed");
+
+        let mut player = Self {
             audio,
+            audio_context,
+            _source_node: source_node,
+            preamp_node,
+            eq_filters,
             volume: 1.0,
             has_source: false,
-        }
+        };
+        player.set_equalizer(EqualizerSettings::default());
+        player
     }
 
     /// No-op on web; auto-advance is handled by the 250ms polling loop
@@ -821,6 +880,9 @@ impl Player {
     pub fn play_url(&mut self, url: String, _meta: NowPlayingMeta) {
         self.audio.set_src(&url);
         self.audio.set_volume(self.volume as f64);
+        if let Err(error) = self.audio_context.resume() {
+            web_sys::console::error_1(&error);
+        }
         match self.audio.play() {
             Ok(_) => self.has_source = true,
             Err(_) => self.has_source = false,
@@ -832,6 +894,9 @@ impl Player {
     }
 
     pub fn play_resume(&mut self) {
+        if let Err(error) = self.audio_context.resume() {
+            web_sys::console::error_1(&error);
+        }
         let _ = self.audio.play();
     }
 
@@ -850,7 +915,29 @@ impl Player {
         self.audio.set_volume(volume as f64);
     }
 
-    pub fn set_equalizer(&mut self, _settings: EqualizerSettings) {}
+    pub fn set_equalizer(&mut self, settings: EqualizerSettings) {
+        let resolved_bands = if settings.enabled {
+            settings.resolved_bands()
+        } else {
+            [0.0; 5]
+        };
+        let max_boost = resolved_bands
+            .iter()
+            .copied()
+            .fold(0.0_f32, f32::max)
+            .max(0.0);
+        let preamp = if settings.enabled {
+            db_to_linear(settings.preamp_db - max_boost)
+        } else {
+            1.0
+        };
+
+        self.preamp_node.gain().set_value(preamp);
+
+        for (index, filter) in self.eq_filters.iter().enumerate() {
+            filter.gain().set_value(resolved_bands[index]);
+        }
+    }
 
     pub fn is_empty(&self) -> bool {
         !self.has_source || self.audio.ended() || self.audio.error().is_some()

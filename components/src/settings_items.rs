@@ -2,6 +2,7 @@ use config::{
     AppConfig, BackBehavior, EqPreset, EqualizerSettings as EqualizerConfig, MusicServer,
 };
 use dioxus::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
 use rfd::AsyncFileDialog;
 
 #[component]
@@ -126,21 +127,35 @@ pub fn MultiDirectoryPicker(
                     }
                 }
             }
-            if !cfg!(target_arch = "wasm32") {
-                button {
-                    onclick: move |_| {
-                        spawn(async move {
-                            if let Some(handle) = AsyncFileDialog::new().pick_folder().await {
-                                on_add.call(handle.path().to_path_buf());
-                            }
-                        });
-                    },
-                    class: "bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-sm text-white transition-colors self-start",
-                    "{add_text}"
-                }
-            }
+            AddFolderButton { on_add, add_text }
         }
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[component]
+fn AddFolderButton(on_add: EventHandler<std::path::PathBuf>, add_text: String) -> Element {
+    rsx! {
+        button {
+            onclick: move |_| {
+                spawn(async move {
+                    if let Some(handle) = AsyncFileDialog::new().pick_folder().await {
+                        on_add.call(handle.path().to_path_buf());
+                    }
+                });
+            },
+            class: "bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-sm text-white transition-colors self-start",
+            "{add_text}"
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[component]
+fn AddFolderButton(on_add: EventHandler<std::path::PathBuf>, add_text: String) -> Element {
+    let _ = on_add;
+    let _ = add_text;
+    rsx! {}
 }
 
 #[component]

@@ -238,7 +238,7 @@ fn App() -> Element {
     let mut selected_album_id = use_signal(String::new);
     let mut selected_playlist_id = use_signal(|| None::<String>);
     let mut selected_artist_name = use_signal(String::new);
-    let search_query = use_signal(String::new);
+    let mut search_query = use_signal(String::new);
     let mut last_server_playlist_key = use_signal(|| None::<String>);
     let mut server_playlist_key_initialized = use_signal(|| false);
 
@@ -821,7 +821,10 @@ fn App() -> Element {
                               config: config,
                           }
                         },
+                        #[cfg(not(target_arch = "wasm32"))]
                         Route::Ytdlp => rsx! { pages::ytdlp::YtdlpPage { config } },
+                        #[cfg(target_arch = "wasm32")]
+                        Route::Ytdlp => rsx! { pages::settings::Settings { config } },
                         Route::Settings => rsx! { pages::settings::Settings { config } },
                         Route::ThemeEditor => rsx! { pages::theme_editor::ThemeEditorPage { config } },
                     }
