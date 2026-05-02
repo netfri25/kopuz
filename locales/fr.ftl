@@ -189,15 +189,15 @@ gruvbox_light_soft = Gruvbox Light Soft
 # Theme Editor
 new_theme = Nouveau Theme
 theme_name = Nom du theme
-my_custom_theme = Mon theme Personalisée
+my_custom_theme = Mon thème personnalisé
 theme_group_dynamic = Dynamic
 theme_group_dark = Sombre
 theme_group_light = Clair
 theme_group_custom = Custom
-colors = Couleur
-preview = Prévilualisation
-save_theme = Sauvegardée le Theme
-track_title = Track Titre
+colors = Couleurs
+preview = Prévisualisation
+save_theme = Sauvegarder le thème
+track_title = Titre de la piste
 
 # Color Labels
 bg = Fond
